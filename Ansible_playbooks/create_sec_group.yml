@@ -1,0 +1,56 @@
+---
+# Create a new security group
+# Run it like this:
+# ansible-playbook --extra-vars '{"CLIENT_USERNAME":"wehappyfew", "REGION":"us-east-1","J_PORT":"random-port","L_PORT":"random-port"}' create_sec_group.yml
+# Notice: I create a whole new Sec Group for every client [check if it is the best practice]
+- name: Create andtag a new sec group
+  hosts: localhost
+  connection: local
+  vars:
+    client_username : "{{CLIENT_USERNAME}}"
+    region          : "{{REGION}}" # eg us-east-1
+    jenkins_port    : "{{J_PORT}}"
+    master_port     : "{{L_PORT}}"
+  tasks:
+    - name: Create security group
+      local_action:
+        module     : ec2_group
+        name       : "{{ client_username }}_sec_group"
+        description: "{{ client_username }}"
+        region     : "{{ region }}"
+        rules:
+
+          - proto    : tcp
+            from_port: 22
+            to_port  : 22
+            cidr_ip  : 0.0.0.0/0 #Notice: i' prepei na kleisei i' na einai anoixto mono mesw tou main instance
+
+          - proto    : tcp
+            from_port: "{{jenkins_port}}"
+            to_port  : "{{jenkins_port}}"
+            cidr_ip  : 0.0.0.0/0 #Notice: den prepei na einai or8anoixto
+
+          - proto    : tcp
+            from_port: "{{master_port}}"
+            to_port  : "{{master_port}}"
+            cidr_ip  : 0.0.0.0/0 #Notice: 8a mporei na to vlepei o cristis san UI
+
+          - proto    : tcp
+            from_port: 5557
+            to_port  : 5558
+            cidr_ip  : 0.0.0.0/0 #Notice: mallon prepeina einai anoixto mono apo to main instance
+      register: aws_new_sec_group
+
+    - name: Tag the security group with a name
+      local_action:
+        module  : ec2_tag
+        resource: "{{ aws_new_sec_group.group_id }}"
+        region  : "{{ region }}"
+        state   : present
+        tags:
+          Name  : "{{ client_username }}_sec_group"
+
+
+
+
+

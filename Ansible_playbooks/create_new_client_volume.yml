@@ -1,0 +1,13 @@
+#Playbook to create a new directory in a specific path
+#Use it like this:
+#ansible-playbook -i hosts --extra-vars '{"new_folder_name":"value"}' create_new_client_volume.yml
+# NOTICE - mallon prepei na dimiourgeitai o fakelos me ton user jenkins
+---
+- hosts: localhost
+  connection: local
+  vars:
+    client_id_var : "{{ CLIENT_ID }}"
+  tasks:
+  - name: Create host volume for the new client
+    user: "mallon o jenkins -> check it"
+    file: path=~/clients_volumes/"{{ client_id_var }}_volume" state=directory

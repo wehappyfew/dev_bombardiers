@@ -1,0 +1,127 @@
+---
+# The playbook must run from inside the client container
+#
+# The playbook:
+# 1. creates a new key-pair
+# 2. and saves it locally [in order to be able to manipulate the remote hosts later]
+# 3. creates a new security group
+# 4. and tags it [name:value]
+# 5. creates X number of new instances [with the new key-pair and sec group]
+# 6. adds all instance public IPs to host group
+#
+# Run it like this:
+# ansible-playbook --extra-vars '{"VAR":"var-value", "VAR":"var-value"}' playbook-name.yml
+# [You can debug a variable directly with - debug: var=hello]
+- hosts: localhost
+  connection: local
+  vars:
+     instance_tag   : "{{ TAG }}"
+     instances_num  : "{{ NUM }}"
+     key_name_var   : "{{ KEY_NAME }}"
+     sec_group_name : "{{ SEC_NAME }}"
+
+     region         : us-east-1
+     ami            : ami-619c2b0a #todo  Locust AMI
+     instance_type  : m3.medium #notice - will change
+
+     project_path: eg /var/lib/jenkins/jobs/Schoox_QA/workspace/SchooxSite/locust #todo -> set it when finalized
+     tests_path_on_slaves: ~/bombardier_tests
+     load_test   : "{{ LOAD_TEST }}" # eg the python script
+  tasks:
+
+  # 1. Create new key
+  - name: Create new key-pair
+    local_action:
+      module  : ec2_key
+      region  : "{{ region }}"
+      name    : "{{ key_name_var }}" # the keypair name
+      #default state is present
+    #The register keyword stores the output/result of a given module in a task into a variable,
+    #so you can access it later in another task.
+    register: key_module_output
+
+  # 2. Save the new key locally
+  - name: Write the new key to a file
+    local_action: shell echo -e "{{ item.value.private_key }}" > ~/.ssh/"{{ key_name_var }}".pem
+    with_dict   : key_module_output
+    when        : item.value.private_key is defined
+
+  # grab the master locust internal ip [eg 10.5.20.2]
+  - name: Grab the master locust internal ip to 1]setup the sec group rule 2]register the slaves
+    local_action: shell /sbin/ip -o -4 addr list eth0 | awk '{print $4}' | cut -d/ -f1 # returns the ip
+    register: master_internal_ip # save the output of the above command in a var
+  - debug: var=master_internal_ip.stdout
+
+  # 3. Create sec group
+  - name: Create and tag a new sec group
+    local_action:
+      module      : ec2_group
+      name        : "{{ sec_group_name }}"
+      description : no_description
+      region      : "{{ region }}"
+      rules:
+        # ports 5557-8 are the defaults for the slave-master communication
+        - proto: tcp
+          from_port : 5557
+          to_port   : 5558
+          cidr_ip   : "{{ master_internal_ip.stdout }}/32" #the /32 means 'only the specific host'
+        # port 8089 is the default for the web UI
+        - proto: tcp
+          from_port : 8089
+          to_port   : 8089
+          cidr_ip   : 0.0.0.0/0 # open from anywhere! Notice->may need to be changed
+    register: aws_new_sec_group
+
+  # 4. Tag the sec group
+  - name: Tag the security group with a name
+    local_action:
+      module  : ec2_tag
+      resource: "{{aws_new_sec_group.group_id}}"
+      region  : "{{ region }}"
+      state   : present
+      tags:
+        Name  : "Sec group"
+
+  # 5. Create X instances
+  - name: Create new AWS instances
+    local_action:
+      module        : ec2
+      region        : "{{ region }}"
+      key_name      : "{{ key_name_var }}"
+      instance_type : "{{ instance_type }}"
+      image         : "{{ ami }}" # use the locust AMI
+      group         : "{{sec_group_name}}"
+      instance_tags :
+        Name: "{{ instance_tag }}"
+      exact_count: "{{ instances_num }}"
+      count_tag  : "{{ instance_tag }}" # always in pair with exact_count !
+      wait: yes # wait for the instance to be 'running' before returning
+    register: slaves
+
+#  # Wait for the instances to take public IP
+#  - name: Wait for the instances to take public IP
+#    local_action:
+#      wait_for: host={{ item.public_ip }} delay=30 timeout=300 state=started
+#    with_items: slaves.results
+#
+#  # Add all new instance public IPs to host group in inventory
+#  - name      : Add all instance public IPs to host group
+#    add_host  : hostname={{ item.public_ip }} groups=locust_slaves
+#    with_items: slaves.instances
+#
+#  # Copy the client code from the master locust [mounted volume] to the slaves
+#  - name: Copy/Syncronize code from master to slaves
+#    hosts: locust_slaves
+#    synchronize: src={{ project_path }} dest={{ tests_path_on_slaves }}
+#
+#  # Start locust master on localhost [client's container]
+#  - name: Start Locust master server
+#    # Start the master locust
+#    local_action: command  locust -f {{ project_path }}/{{ load_test }} --master
+#    wait: 15
+#
+#  # Register each slave to master
+#  - name      : Register the Locust slaves to master
+#    command   : locust -f {{ project_path }}/{{ load_test }} --slave --master-host=master_internal_ip #use the registered var
+#    with_items: slaves.instances
+#    wait: 10
