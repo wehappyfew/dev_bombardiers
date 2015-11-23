@@ -1,4 +1,5 @@
 ---
+
 # The playbook must run from inside the client container
 #
 # The playbook:

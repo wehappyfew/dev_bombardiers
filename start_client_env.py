@@ -2,6 +2,7 @@ __author__ = 'wehappyfew'
 import subprocess
 import time
 from jenkins_job import create_jenkins_xml_config, post_new_xml_config
+
 # TODO: scenario1: both containers will share a host volume [Notice PROBLEM: Jenkins inside the container cannot build the code]
 # TODO: scenario2: locust will have access to the tests inside the jenkins container. That way the jenkins container can never be stopped or the client data will be lost
 

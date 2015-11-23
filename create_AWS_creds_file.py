@@ -1,6 +1,7 @@
 __author__ = 'wehappyfew'
 
 
+
 def create_boto_cfg(aws_key_id, aws_secret):
 	"""
 	The function creates a boto.cfg file in the user's folder [Linux].

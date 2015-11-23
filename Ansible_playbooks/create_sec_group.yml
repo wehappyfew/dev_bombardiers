@@ -1,4 +1,5 @@
 ---
+
 # Create a new security group
 # Run it like this:
 # ansible-playbook --extra-vars '{"CLIENT_USERNAME":"wehappyfew", "REGION":"us-east-1","J_PORT":"random-port","L_PORT":"random-port"}' create_sec_group.yml

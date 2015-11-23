@@ -2,6 +2,7 @@ __author__ = 'wehappyfew'
 
 import requests,pprint
 
+
 def create_new_jenkins_job(j_url, j_port, new_job_name, j_user, j_pass):
 	"""
 	Create a new jenkins job
