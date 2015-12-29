@@ -90,70 +90,6 @@ def create_jenkins_xml_config(github_username =None,
 	file.close()
 	print "File updated"
 
-
-# def create_jenkins_xml_config(github_username, repo_name="bombardiers", branch_name="master", filename = 'new_config.xml'):
-# 	"""
-# 	The function creates [is not exists] an XML config file for jenkins
-# 	and sets the user provided data.
-# 	If the file already exists, it rewrites it and replaces the variables with the new ones.
-#
-# 	:param github_username   : The user provided github username
-# 	:param repo_name		 : The user provided repo name , defaults to 'bombardiers'
-# 	:param branch_name 		 : The user provided branch name , defaults to 'master'
-# 	:return:
-# 	"""
-#
-# 	xml_text = \
-# 	"<project>\n" \
-# 	"<actions/>\n" \
-# 	"<description/>\n" \
-# 	"<keepDependencies>false</keepDependencies>\n" \
-# 	"<properties>\n" \
-# 	"<com.coravy.hudson.plugins.github.GithubProjectProperty plugin=\"github@1.14.0\">\n" \
-# 	"<projectUrl>https://github.com/{0}/{1}/</projectUrl>\n" \
-# 	"</com.coravy.hudson.plugins.github.GithubProjectProperty>\n" \
-# 	"</properties>\n" \
-# 	"<scm class=\"hudson.plugins.git.GitSCM\" plugin=\"git@2.4.0\">\n" \
-# 	"<configVersion>2</configVersion>\n" \
-# 	"<userRemoteConfigs>\n" \
-# 	"<hudson.plugins.git.UserRemoteConfig>\n" \
-# 	"<url>https://github.com/{0}/{1}.git</url>\n" \
-# 	"</hudson.plugins.git.UserRemoteConfig>\n" \
-# 	"</userRemoteConfigs>\n" \
-# 	"<branches>\n" \
-# 	"<hudson.plugins.git.BranchSpec>\n" \
-# 	"<name>*/{2}</name>\n" \
-# 	"</hudson.plugins.git.BranchSpec>\n" \
-# 	"</branches>\n" \
-# 	"<doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>\n" \
-# 	"<submoduleCfg class=\"list\"/>\n" \
-# 	"<extensions/>\n" \
-# 	"</scm>\n" \
-# 	"<canRoam>true</canRoam>\n" \
-# 	"<disabled>false</disabled>\n" \
-# 	"<blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>\n" \
-# 	"<blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>\n" \
-# 	"<triggers>\n" \
-# 	"<com.cloudbees.jenkins.GitHubPushTrigger plugin=\"github@1.14.0\">\n" \
-# 	"<spec/>\n" \
-# 	"</com.cloudbees.jenkins.GitHubPushTrigger>\n" \
-# 	"</triggers>\n" \
-# 	"<concurrentBuild>false</concurrentBuild>\n" \
-# 	"<builders/>\n" \
-# 	"<publishers/>\n" \
-# 	"<buildWrappers/>\n" \
-# 	"</project>\n" .format(github_username, repo_name, branch_name)
-#
-# 	try:
-# 		print('Creating new jenkins configuration xml file \n')
-# 		file = open(filename,'w')
-# 		file.write(xml_text)
-# 		file.close()
-# 		print "File created"
-#
-# 	except Exception as e:
-# 		print 'Something went wrong!\n', e
-
 def post_new_xml_config(j_url, j_port, job_name, j_user, j_pass, new_config_path):
 	"""
 	The function reads the new file and posts it to replace the old one.
@@ -205,7 +141,6 @@ j_pass 		= "bombardier"
 job_name 	= "bombardier"
 j_xml_url 	= "{0}:{1}/job/{2}/config.xml".format(j_url,j_port,job_name)
 
-# create_new_jenkins_job(j_url=j_url,j_port=j_port,new_job_name=job_name, j_user=j_user, j_pass=j_pass)
 temp_config = "temp_config.xml"
 create_jenkins_xml_config(github_username	="wehappyfew",
 						  repo_name			="bombardiers",
