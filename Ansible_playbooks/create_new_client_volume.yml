@@ -4,11 +4,6 @@
 # NOTICE - mallon prepei na dimiourgeitai o fakelos me ton user jenkins
 
 
-
-
-
-
-
 ---
 - hosts: localhost
   connection: local
