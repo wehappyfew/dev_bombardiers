@@ -23,6 +23,8 @@ new_config 	= "{0}_config.xml".format(client_id)
 # # Notice: choose which hosts file you will use
 # subprocess.call(["ansible-playbook", "-i", "hosts", "--extra-vars", "'{\"CLIENT_ID\":\"%s\"}'"%client_id, "create_new_client_volume.yml"])
 
+
+
 print "START: Initializing environment for user '%s'"%client_id
 # JENKINS CONTAINER SETUP-----------------------------------------------------------------------------------------------
 # 
@@ -50,13 +52,21 @@ jenkins_random_port = j_output
 print "[{0}] The JenkinsCI server's port is: {1}".format(j_name, jenkins_random_port)
 
 # 3. --Set the user's username & repo URL--
-# The Jenkins container has already setup the bombardier job and the GH plugin
-create_jenkins_xml_config(CLIENT_gh_username, CLIENT_repo_name, CLIENT_branch_name, filename=new_config )
+# The Jenkins container has already set up the bombardier job and the GH plugin
+create_jenkins_xml_config(github_username	=CLIENT_gh_username,
+						  repo_name			=CLIENT_repo_name,
+						  juser				=j_user,
+						  jpass				=j_pass,
+						  j_xml_url			="{0}:{1}/job/{2}/config.xml".format(j_url, jenkins_random_port, job_name),
+						  filename			=new_config,
+						  new_branch_name	=CLIENT_branch_name)
 post_new_xml_config(j_url, jenkins_random_port, job_name, j_user, j_pass, new_config_path=new_config)
 print "[%s] JenkinsCI server config is set."%j_name
 
 # 
 # JENKINS CONTAINER SETUP-----------------------------------------------------------------------------------------------
+
+
 
 
 # LOCUST CONTAINER SETUP-----------------------------------------------------------------------------------------------
@@ -84,6 +94,9 @@ p = subprocess.Popen( port_cmd, stdout=subprocess.PIPE, shell=True )
 locust_random_port = l_output
 
 print "[{0}] The Locust master server's port is: {1}".format(l_name, locust_random_port)
+
+#
+# LOCUST CONTAINER SETUP-----------------------------------------------------------------------------------------------
 
 # 6. --Edit the AWS security group with the locust_random_port--
 # todo
