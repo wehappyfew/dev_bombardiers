@@ -25,68 +25,134 @@ def create_new_jenkins_job(j_url, j_port, new_job_name, j_user, j_pass):
 		print "Something went wrong! I cound not create new Jenkins job.\n"
 		print e
 
-def create_jenkins_xml_config(github_username, repo_name="bombardiers", branch_name="master", filename = 'new_config.xml'):
+def create_jenkins_xml_config(github_username =None,
+							  repo_name	= None,
+							  juser = None,
+							  jpass	= None,
+							  j_xml_url	=None,
+							  filename = None,
+							  new_branch_name = None):
 	"""
-	The function creates [is not exists] an XML config file for jenkins
-	and sets the user provided data.
-	If the file already exists, it rewrites it and replaces the variables with the new ones.
+	The function reads the jenkins config.xml , saves it and changes the branch name.
+	[Then, the file with the updated branch name is ready to be posted back.]
 
-	:param github_username   : The user provided github username
-	:param repo_name		 : The user provided repo name , defaults to 'bombardiers'
-	:param branch_name 		 : The user provided branch name , defaults to 'master'
+	1. Get the config.xml
+	2. Save it to a file
+	3. Parse the file with xmltodict and make it a puthon dictionary
+	4. Parse the dictionary and find the branch name
+	5. Replace it
+	6. Rewrite the temp file with the new branch name [optionally the github_username and/or repo_name]
+
+	:param github_username:
+	:param repo_name:
+	:param juser:
+	:param jpass:
+	:param j_xml_url: eg: http://55.66.11.184:8686/job/MyJobName/config.xml
+	:param filename: Essentially the file path.If no path is provided , the file is created in this scripts path.
+	:param new_branch_name:
 	:return:
 	"""
+	import requests, xmltodict
 
-	xml_text = \
-	"<project>\n" \
-	"<actions/>\n" \
-	"<description/>\n" \
-	"<keepDependencies>false</keepDependencies>\n" \
-	"<properties>\n" \
-	"<com.coravy.hudson.plugins.github.GithubProjectProperty plugin=\"github@1.14.0\">\n" \
-	"<projectUrl>https://github.com/{0}/{1}/</projectUrl>\n" \
-	"</com.coravy.hudson.plugins.github.GithubProjectProperty>\n" \
-	"</properties>\n" \
-	"<scm class=\"hudson.plugins.git.GitSCM\" plugin=\"git@2.4.0\">\n" \
-	"<configVersion>2</configVersion>\n" \
-	"<userRemoteConfigs>\n" \
-	"<hudson.plugins.git.UserRemoteConfig>\n" \
-	"<url>https://github.com/{0}/{1}.git</url>\n" \
-	"</hudson.plugins.git.UserRemoteConfig>\n" \
-	"</userRemoteConfigs>\n" \
-	"<branches>\n" \
-	"<hudson.plugins.git.BranchSpec>\n" \
-	"<name>*/{2}</name>\n" \
-	"</hudson.plugins.git.BranchSpec>\n" \
-	"</branches>\n" \
-	"<doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>\n" \
-	"<submoduleCfg class=\"list\"/>\n" \
-	"<extensions/>\n" \
-	"</scm>\n" \
-	"<canRoam>true</canRoam>\n" \
-	"<disabled>false</disabled>\n" \
-	"<blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>\n" \
-	"<blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>\n" \
-	"<triggers>\n" \
-	"<com.cloudbees.jenkins.GitHubPushTrigger plugin=\"github@1.14.0\">\n" \
-	"<spec/>\n" \
-	"</com.cloudbees.jenkins.GitHubPushTrigger>\n" \
-	"</triggers>\n" \
-	"<concurrentBuild>false</concurrentBuild>\n" \
-	"<builders/>\n" \
-	"<publishers/>\n" \
-	"<buildWrappers/>\n" \
-	"</project>\n" .format(github_username, repo_name, branch_name)
+	# Get the config.xml from the Jenkins URL
+	auth    = (juser, jpass)
+	headers = {"Content-Type" : "application/xml"}
+	r = requests.get(j_xml_url, auth=auth, headers=headers)
+	# print r.content # debugging
 
+	# Create the temp file
 	try:
 		print('Creating new jenkins configuration xml file \n')
 		file = open(filename,'w')
-		file.write(xml_text)
+		file.write(r.content)
 		file.close()
 		print "File created"
-
 	except Exception as e:
 		print 'Something went wrong!\n', e
+
+	# parse the xml and create a dict
+	with open(filename) as fd:
+		obj = xmltodict.parse(fd.read())
+
+	# grab the current branch name
+	branch_name = obj["project"]["scm"]["branches"]["hudson.plugins.git.BranchSpec"]["name"]
+	print "Branch name found: ",branch_name
+
+	# set the new branch name
+	obj["project"]["scm"]["branches"]["hudson.plugins.git.BranchSpec"]["name"] = "*/%s"%new_branch_name
+	print "New branch name set: */%s" % new_branch_name
+	# optional: set the github_username, repo_name
+	obj["project"]["scm"]["userRemoteConfigs"]["hudson.plugins.git.UserRemoteConfig"]["url"] = "git@github.com:{0}/{1}.git".format(github_username, repo_name)
+
+	# write the temp file with the new branch name
+	file = open(filename,'w')
+	file.write(xmltodict.unparse(obj, pretty=True))
+	file.close()
+	print "File updated"
+
+
+# def create_jenkins_xml_config(github_username, repo_name="bombardiers", branch_name="master", filename = 'new_config.xml'):
+# 	"""
+# 	The function creates [is not exists] an XML config file for jenkins
+# 	and sets the user provided data.
+# 	If the file already exists, it rewrites it and replaces the variables with the new ones.
+#
+# 	:param github_username   : The user provided github username
+# 	:param repo_name		 : The user provided repo name , defaults to 'bombardiers'
+# 	:param branch_name 		 : The user provided branch name , defaults to 'master'
+# 	:return:
+# 	"""
+#
+# 	xml_text = \
+# 	"<project>\n" \
+# 	"<actions/>\n" \
+# 	"<description/>\n" \
+# 	"<keepDependencies>false</keepDependencies>\n" \
+# 	"<properties>\n" \
+# 	"<com.coravy.hudson.plugins.github.GithubProjectProperty plugin=\"github@1.14.0\">\n" \
+# 	"<projectUrl>https://github.com/{0}/{1}/</projectUrl>\n" \
+# 	"</com.coravy.hudson.plugins.github.GithubProjectProperty>\n" \
+# 	"</properties>\n" \
+# 	"<scm class=\"hudson.plugins.git.GitSCM\" plugin=\"git@2.4.0\">\n" \
+# 	"<configVersion>2</configVersion>\n" \
+# 	"<userRemoteConfigs>\n" \
+# 	"<hudson.plugins.git.UserRemoteConfig>\n" \
+# 	"<url>https://github.com/{0}/{1}.git</url>\n" \
+# 	"</hudson.plugins.git.UserRemoteConfig>\n" \
+# 	"</userRemoteConfigs>\n" \
+# 	"<branches>\n" \
+# 	"<hudson.plugins.git.BranchSpec>\n" \
+# 	"<name>*/{2}</name>\n" \
+# 	"</hudson.plugins.git.BranchSpec>\n" \
+# 	"</branches>\n" \
+# 	"<doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>\n" \
+# 	"<submoduleCfg class=\"list\"/>\n" \
+# 	"<extensions/>\n" \
+# 	"</scm>\n" \
+# 	"<canRoam>true</canRoam>\n" \
+# 	"<disabled>false</disabled>\n" \
+# 	"<blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>\n" \
+# 	"<blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>\n" \
+# 	"<triggers>\n" \
+# 	"<com.cloudbees.jenkins.GitHubPushTrigger plugin=\"github@1.14.0\">\n" \
+# 	"<spec/>\n" \
+# 	"</com.cloudbees.jenkins.GitHubPushTrigger>\n" \
+# 	"</triggers>\n" \
+# 	"<concurrentBuild>false</concurrentBuild>\n" \
+# 	"<builders/>\n" \
+# 	"<publishers/>\n" \
+# 	"<buildWrappers/>\n" \
+# 	"</project>\n" .format(github_username, repo_name, branch_name)
+#
+# 	try:
+# 		print('Creating new jenkins configuration xml file \n')
+# 		file = open(filename,'w')
+# 		file.write(xml_text)
+# 		file.close()
+# 		print "File created"
+#
+# 	except Exception as e:
+# 		print 'Something went wrong!\n', e
 
 def post_new_xml_config(j_url, j_port, job_name, j_user, j_pass, new_config_path):
 	"""
@@ -132,15 +198,22 @@ def delete_temp_xml_config(filepath):
 
 
 # Only for DEV --------------------------------------------------------------------------------------------------------
-j_url  = "http://52.91.136.13"
-j_port = 32769 #Notice: must be taken as a cmdline arg -> sys.argv[1]
-j_user = "jenkins"
-j_pass = "bombardier"
-job_name = "bombardier"
+j_url  		= "http://52.91.136.13"
+j_port 		= 32768 #Notice: must be taken as a cmdline arg -> sys.argv[1]
+j_user 		= "jenkins"
+j_pass 		= "bombardier"
+job_name 	= "bombardier"
+j_xml_url 	= "{0}:{1}/job/{2}/config.xml".format(j_url,j_port,job_name)
 
 # create_new_jenkins_job(j_url=j_url,j_port=j_port,new_job_name=job_name, j_user=j_user, j_pass=j_pass)
 temp_config = "temp_config.xml"
-create_jenkins_xml_config("wehappyfew", branch_name="master", filename=temp_config)
+create_jenkins_xml_config(github_username	="wehappyfew",
+						  repo_name			="bombardiers",
+						  juser				=j_user,
+						  jpass				=j_pass,
+						  j_xml_url			=j_xml_url,
+						  filename			=temp_config,
+						  new_branch_name	="master")
 post_new_xml_config(j_url, j_port, job_name, j_user,j_pass, temp_config)
 delete_temp_xml_config(filepath=temp_config)
 # Only for DEV --------------------------------------------------------------------------------------------------------
