@@ -2,7 +2,7 @@ version: 0.0
 os: linux
 files:
   - source: /
-    destination: /home/ec2-user
+    destination: /home/ec2-user/
 #hooks:
 #  BeforeInstall:
 #    - location: scripts/install_dependencies.sh
@@ -20,3 +20,25 @@ files:
 #    - location: scripts/stop_server.sh
 #      timeout: 300
 #      runas: root
+
+# Notice: Documentation
+
+#An AppSpec file must be named appspec.yml.
+#It must be placed in the root of an application's source code's directory structure.
+#AppSpec files that do not follow this requirement will cause associated deployments to fail.
+
+#version
+#
+#    This section specifies the version of the AppSpec file. Do not change this value. It is reserved by AWS CodeDeploy for future use.
+#os
+#
+#    This section specifies the operating system value for the instance.
+#files
+#
+#    This section specifies the names of files that should be copied to the instance during the deployment's Install event.
+#permissions
+#
+#    This section specifies how special permissions, if any, should be applied to the files in the files section as they are being copied over to the instance. This section applies to Amazon Linux, Ubuntu Server, and Red Hat Enterprise Linux (RHEL) instances only.
+#hooks
+#
+#    This section specifies scripts to run at specific deployment lifecycle events during the deployment.
