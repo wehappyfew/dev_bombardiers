@@ -2,7 +2,7 @@ __author__ = 'wehappyfew'
 
 import subprocess,os
 
-#
+# fdfsd
 # p = subprocess.Popen( "ipconfig", stdout=subprocess.PIPE, shell=True )
 # (output, err) = p.communicate()
 # print output, err
